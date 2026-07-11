@@ -1,16 +1,10 @@
----
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
-# image will be published to ghcr.io/<user>/<name>
-name: template
-# description will be included in the image's metadata
-description: This is my personal OS image.
+# image will be published to ghcr.io/aplancar/aurora-aplancar
+name: aurora-aplancar
+description: My personal Aurora build with NordVPN and flatpaks
+base-image: ghcr.io/ublue-os/aurora-dx-nvidia-open
+image-version: latest
 
-# the base image to build on top of (FROM) and the version tag to use
-base-image: ghcr.io/ublue-os/silverblue-main
-image-version: 42 # latest is also supported if you want new updates ASAP
-
-# module configuration, executed in order
-# you can include multiple instances of the same module
 modules:
   - type: files
     files:
@@ -21,16 +15,19 @@ modules:
     repos:
       copr:
         - atim/starship
+      keys:
+        - https://repo.nordvpn.com/gpg/nordvpn_public.asc
+      files:
+        - nordvpn.repo
     install:
       packages:
-        - micro
+        - nordvpn
         - starship
+        - neovim
     remove:
       packages:
-        # example: removing firefox (in favor of the flatpak)
-        # "firefox" is the main package, "firefox-langpacks" is a dependency
         - firefox
-        - firefox-langpacks # also remove firefox dependency (not required for all packages, this is a special case)
+        - firefox-langpacks
 
   - type: default-flatpaks
     configurations:
@@ -39,7 +36,7 @@ modules:
         # If no repo information is specified, Flathub will be used by default
         install: # system flatpaks we want all users to have and not remove
           - org.mozilla.firefox
-          - org.gnome.Loupe
+          - com.nordpass.NordPass
       - scope: user # Also add Flathub user repo, but no user packages
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully
