@@ -47,6 +47,7 @@ modules:
         install: # system flatpaks we want all users to have and not remove
           - org.mozilla.firefox
           - com.nordpass.NordPass
+          - com.valvesoftware.Steam
       - scope: user # Also add Flathub user repo, but no user packages
 
   - type: kargs
