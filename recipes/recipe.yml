@@ -10,7 +10,7 @@ modules:
   - type: files
     files:
       - source: system
-        destination: /
+        destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
 
   - type: dnf
     repos:
@@ -41,11 +41,16 @@ modules:
 
   - type: default-flatpaks
     configurations:
-      - notify: true
+      - notify: true # Send notification after install/uninstall is finished (true/false)
         scope: system
-        install:
+        # If no repo information is specified, Flathub will be used by default
+        install: # system flatpaks we want all users to have and not remove
           - org.mozilla.firefox
           - com.nordpass.NordPass
-      - scope: user
+      - scope: user # Also add Flathub user repo, but no user packages
 
-  - type: signing
+  - type: kargs
+    kargs:
+      - i915.enable_dpcd_backlight=1 # Fix for ROG laptop backlight not working on Linux
+
+  - type: signing # this sets up the proper policy & signing files for signed images to work fully
