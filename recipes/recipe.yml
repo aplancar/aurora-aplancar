@@ -1,3 +1,4 @@
+---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 # image will be published to ghcr.io/aplancar/aurora-aplancar
 name: aurora-aplancar
@@ -9,7 +10,7 @@ modules:
   - type: files
     files:
       - source: system
-        destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
+        destination: /
 
   - type: dnf
     repos:
@@ -29,14 +30,22 @@ modules:
         - firefox
         - firefox-langpacks
 
+  - type: script
+    scripts:
+      - nordvpn-group.sh
+
+  - type: systemd
+    system:
+      enabled:
+        - nordvpnd.service
+
   - type: default-flatpaks
     configurations:
-      - notify: true # Send notification after install/uninstall is finished (true/false)
+      - notify: true
         scope: system
-        # If no repo information is specified, Flathub will be used by default
-        install: # system flatpaks we want all users to have and not remove
+        install:
           - org.mozilla.firefox
           - com.nordpass.NordPass
-      - scope: user # Also add Flathub user repo, but no user packages
+      - scope: user
 
-  - type: signing # this sets up the proper policy & signing files for signed images to work fully
+  - type: signing
