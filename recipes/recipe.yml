@@ -11,7 +11,7 @@ modules:
     files:
       - source: system
         destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
-      - source: files/zshrc
+      - source: zshrc
         destination: /etc/skel/.zshrc   # ships a default zshrc for new users; for your own user, symlink from your dotfiles repo instead
 
   - type: dnf
