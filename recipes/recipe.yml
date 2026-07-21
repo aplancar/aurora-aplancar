@@ -11,6 +11,8 @@ modules:
     files:
       - source: system
         destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
+      - source: files/zshrc
+        destination: /etc/skel/.zshrc   # ships a default zshrc for new users; for your own user, symlink from your dotfiles repo instead
 
   - type: dnf
     repos:
@@ -25,6 +27,10 @@ modules:
         - nordvpn
         - starship
         - neovim
+        - zsh
+        - zsh-autosuggestions
+        - zsh-syntax-highlighting
+        - kitty
     remove:
       packages:
         - firefox
@@ -33,6 +39,7 @@ modules:
   - type: script
     scripts:
       - nordvpn-group.sh
+      - set-default-shell.sh   # runs chsh or sets it via /etc/passwd during build if you want it default without manual chsh
 
   - type: systemd
     system:
