@@ -31,6 +31,7 @@ modules:
         - zsh-autosuggestions
         - zsh-syntax-highlighting
         - kitty
+        - nodejs
     remove:
       packages:
         - firefox
