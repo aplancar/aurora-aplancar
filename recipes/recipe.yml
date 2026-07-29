@@ -33,6 +33,7 @@ modules:
         - zsh-syntax-highlighting
         - kitty
         - claude-code
+        - gh
     remove:
       packages:
         - firefox
