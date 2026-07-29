@@ -22,6 +22,7 @@ modules:
         - https://repo.nordvpn.com/gpg/nordvpn_public.asc
       files:
         - nordvpn.repo
+        - claude-code.repo
     install:
       packages:
         - nordvpn
@@ -31,7 +32,7 @@ modules:
         - zsh-autosuggestions
         - zsh-syntax-highlighting
         - kitty
-        - nodejs
+        - claude-code
     remove:
       packages:
         - firefox
@@ -41,7 +42,6 @@ modules:
     scripts:
       - nordvpn-group.sh
       - set-default-shell.sh   # runs chsh or sets it via /etc/passwd during build if you want it default without manual chsh
-      - install-claude-code.sh
 
   - type: systemd
     system:
