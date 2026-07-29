@@ -2,9 +2,12 @@
 set -euo pipefail
 
 # set-default-shell.sh
-# Sets zsh as the default shell for new users (via /etc/skel-relevant defaults)
-# and for root. Does NOT affect existing user accounts on rebase/rebuild —
-# /etc/passwd for existing users is preserved by ostree's 3-way /etc merge.
+# Sets zsh as the default shell for root and future new users.
+# Uses usermod instead of chsh — chsh (and other setuid account tools)
+# are intentionally stripped from Fedora Atomic/Kinoite-based images
+# (Aurora included), so chsh is not available even though util-linux
+# still owns other files. usermod does not depend on the setuid binary
+# and is the supported approach on these images.
 
 ZSH_PATH="/usr/bin/zsh"
 
@@ -16,7 +19,7 @@ fi
 # Set root's default shell in the image
 usermod --shell "$ZSH_PATH" root
 
-# Make zsh the default for any newly-created user by updating useradd's default
+# Make zsh the default for any newly-created user
 if [ -f /etc/default/useradd ]; then
     sed -i "s|^SHELL=.*|SHELL=$ZSH_PATH|" /etc/default/useradd
 else

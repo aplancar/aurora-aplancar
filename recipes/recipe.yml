@@ -30,7 +30,6 @@ modules:
         - zsh
         - zsh-autosuggestions
         - zsh-syntax-highlighting
-        - util-linux-user
         - kitty
     remove:
       packages:
@@ -41,6 +40,7 @@ modules:
     scripts:
       - nordvpn-group.sh
       - set-default-shell.sh   # runs chsh or sets it via /etc/passwd during build if you want it default without manual chsh
+      - install-claude-code.sh
 
   - type: systemd
     system:
