@@ -16,8 +16,6 @@ modules:
 
   - type: dnf
     repos:
-      copr:
-        - atim/starship
       keys:
         - https://repo.nordvpn.com/gpg/nordvpn_public.asc
       files:
@@ -26,14 +24,12 @@ modules:
     install:
       packages:
         - nordvpn
-        - starship
         - neovim
         - zsh
         - zsh-autosuggestions
         - zsh-syntax-highlighting
         - kitty
         - claude-code
-        - gh
     remove:
       packages:
         - firefox
