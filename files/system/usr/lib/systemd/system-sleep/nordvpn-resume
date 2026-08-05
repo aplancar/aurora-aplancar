@@ -1,0 +1,63 @@
+#!/usr/bin/bash
+#
+# NordLynx (NordVPN's WireGuard backend) keeps stale routes/socket state
+# across suspend and silently blackholes traffic until the tunnel is torn
+# down and rebuilt. systemd-logind runs every executable in this directory
+# automatically on sleep/resume — no unit needs to be enabled.
+
+set -uo pipefail
+
+ACTION="${1:-}"
+STAGE="${2:-}"
+
+log() {
+    echo "nordvpn-resume: $*"
+}
+
+# Only act after waking up; ignore the "pre" (about to sleep) call.
+[ "$ACTION" = "post" ] || exit 0
+
+case "$STAGE" in
+    suspend|hibernate|hybrid-sleep|suspend-then-hibernate) ;;
+    *) exit 0 ;;
+esac
+
+if ! command -v nordvpn >/dev/null 2>&1; then
+    log "nordvpn CLI not found, skipping"
+    exit 0
+fi
+
+if ! systemctl is-active --quiet nordvpnd.service; then
+    log "nordvpnd.service is not active, skipping"
+    exit 0
+fi
+
+STATUS_OUTPUT="$(nordvpn status 2>/dev/null)" || {
+    log "nordvpn status check failed, skipping"
+    exit 0
+}
+
+if ! grep -qi "^Status: Connected" <<<"$STATUS_OUTPUT"; then
+    log "was not connected before suspend, nothing to do"
+    exit 0
+fi
+
+log "reconnecting NordVPN after resume"
+
+# Give NetworkManager a moment to bring the real interface back up first.
+sleep 2
+
+if ! nordvpn disconnect >/dev/null 2>&1; then
+    log "disconnect command failed, aborting reconnect attempt"
+    exit 0
+fi
+
+sleep 1
+
+if ! nordvpn connect >/dev/null 2>&1; then
+    log "reconnect command failed"
+    exit 0
+fi
+
+log "reconnected successfully"
+exit 0
