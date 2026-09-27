@@ -1,8 +1,8 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
-# image will be published to ghcr.io/aplancar/aurora-aplancar
-name: aurora-aplancar
-description: My personal Aurora build with NordVPN and flatpaks
+# image will be published to ghcr.io/aplancar/aurora-melisandre
+name: aurora-melisandre
+description: Aurora build for melisandre with NordVPN and flatpaks, no Steam/no ROG kargs
 base-image: ghcr.io/ublue-os/aurora-dx-nvidia-open
 image-version: latest
 
@@ -13,10 +13,6 @@ modules:
     configurations:
       - scope: system
         install:
-          - com.valvesoftware.Steam
-
-  - type: kargs
-    kargs:
-      - i915.enable_dpcd_backlight=3 # Fix for ROG laptop backlight not working on Linux
+          - org.deluge_torrent.deluge
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully
