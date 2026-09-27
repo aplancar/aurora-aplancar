@@ -27,7 +27,7 @@ jobs:
       matrix:
         recipe:
           # !! Add your recipes here
-          - recipe.yml
+          - recipe-michaela.yml
           - recipe-melisandre.yml
     steps:
       # the build is fully handled by the reusable github action
