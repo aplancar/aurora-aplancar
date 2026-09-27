@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
-# image will be published to ghcr.io/aplancar/aurora-aplancar
-name: aurora-aplancar
+# image will be published to ghcr.io/aplancar/aurora-michaela
+name: aurora-michaela
 description: My personal Aurora build with NordVPN and flatpaks
 base-image: ghcr.io/ublue-os/aurora-dx-nvidia-open
 image-version: latest

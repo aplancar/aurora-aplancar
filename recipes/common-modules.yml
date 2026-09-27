@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
-# Shared modules for every aurora-aplancar image. Machine-specific bits
+# Shared modules for every machine's image in this repo. Machine-specific bits
 # (extra flatpaks, kargs, etc.) live in the per-machine recipe files and
 # are appended after this import — see recipe.yml / recipe-melisandre.yml.
 modules:
