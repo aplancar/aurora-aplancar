@@ -4,48 +4,80 @@
 # across suspend and silently blackholes traffic until the tunnel is torn
 # down and rebuilt. systemd-logind runs every executable in this directory
 # automatically on sleep/resume — no unit needs to be enabled.
+#
+# The network interface and nordvpnd typically aren't ready the instant
+# resume fires, so checking `nordvpn status` immediately on "post" races
+# the interface coming back up and fails every time. Instead, record
+# whether we were connected on "pre" (while everything is still up), then
+# on "post" poll for network + daemon readiness before acting.
 
 set -uo pipefail
 
 ACTION="${1:-}"
 STAGE="${2:-}"
 
+STATE_FILE="/run/nordvpn-resume.was-connected"
+
 log() {
     echo "nordvpn-resume: $*"
 }
-
-# Only act after waking up; ignore the "pre" (about to sleep) call.
-[ "$ACTION" = "post" ] || exit 0
 
 case "$STAGE" in
     suspend|hibernate|hybrid-sleep|suspend-then-hibernate) ;;
     *) exit 0 ;;
 esac
 
+if [ "$ACTION" = "pre" ]; then
+    rm -f "$STATE_FILE"
+
+    command -v nordvpn >/dev/null 2>&1 || exit 0
+    systemctl is-active --quiet nordvpnd.service || exit 0
+
+    STATUS_OUTPUT="$(nordvpn status 2>/dev/null)" || exit 0
+    if grep -qi "^Status: Connected" <<<"$STATUS_OUTPUT"; then
+        touch "$STATE_FILE"
+    fi
+    exit 0
+fi
+
+[ "$ACTION" = "post" ] || exit 0
+
+if [ ! -e "$STATE_FILE" ]; then
+    log "was not connected before suspend, nothing to do"
+    exit 0
+fi
+rm -f "$STATE_FILE"
+
 if ! command -v nordvpn >/dev/null 2>&1; then
     log "nordvpn CLI not found, skipping"
     exit 0
 fi
+
+# Wait for a default route before bothering the VPN daemon at all.
+for _ in $(seq 1 30); do
+    ip route show default 2>/dev/null | grep -q . && break
+    sleep 1
+done
 
 if ! systemctl is-active --quiet nordvpnd.service; then
     log "nordvpnd.service is not active, skipping"
     exit 0
 fi
 
-STATUS_OUTPUT="$(nordvpn status 2>/dev/null)" || {
-    log "nordvpn status check failed, skipping"
-    exit 0
-}
+# nordvpnd's CLI/gRPC socket can take a few seconds to answer after resume;
+# retry instead of trusting a single immediate check.
+STATUS_OUTPUT=""
+for _ in $(seq 1 15); do
+    STATUS_OUTPUT="$(nordvpn status 2>/dev/null)" && break
+    sleep 1
+done
 
-if ! grep -qi "^Status: Connected" <<<"$STATUS_OUTPUT"; then
-    log "was not connected before suspend, nothing to do"
+if [ -z "$STATUS_OUTPUT" ]; then
+    log "nordvpn status check failed after waiting, skipping"
     exit 0
 fi
 
 log "reconnecting NordVPN after resume"
-
-# Give NetworkManager a moment to bring the real interface back up first.
-sleep 2
 
 if ! nordvpn disconnect >/dev/null 2>&1; then
     log "disconnect command failed, aborting reconnect attempt"
