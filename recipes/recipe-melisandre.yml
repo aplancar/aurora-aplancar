@@ -3,7 +3,7 @@
 # image will be published to ghcr.io/aplancar/aurora-melisandre
 name: aurora-melisandre
 description: Aurora build for melisandre with NordVPN and flatpaks, no Steam/no ROG kargs
-base-image: ghcr.io/ublue-os/aurora-dx-nvidia-open
+base-image: ghcr.io/ublue-os/aurora-dx  # melisandre has only an Intel iGPU
 image-version: latest
 
 modules:

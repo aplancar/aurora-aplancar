@@ -34,7 +34,6 @@ modules:
 
   - type: script
     scripts:
-      - nordvpn-group.sh
       - set-default-shell.sh   # runs chsh or sets it via /etc/passwd during build if you want it default without manual chsh
 
   - type: systemd
