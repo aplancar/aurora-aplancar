@@ -45,13 +45,23 @@ if [ "$ACTION" = "pre" ]; then
     exit 0
 fi
 
-[ "$ACTION" = "post" ] || exit 0
+if [ "$ACTION" = "post" ]; then
+    if [ ! -e "$STATE_FILE" ]; then
+        log "was not connected before suspend, nothing to do"
+        exit 0
+    fi
+    rm -f "$STATE_FILE"
 
-if [ ! -e "$STATE_FILE" ]; then
-    log "was not connected before suspend, nothing to do"
+    # systemd-sleep keeps user.slice frozen until every hook exits, so the
+    # waits and reconnect below would freeze the desktop for ~45s after
+    # resume. Hand them to a transient unit and return immediately.
+    systemd-run --no-block --collect --quiet --unit=nordvpn-resume-reconnect \
+        "$0" reconnect "$STAGE" \
+        || log "failed to start background reconnect"
     exit 0
 fi
-rm -f "$STATE_FILE"
+
+[ "$ACTION" = "reconnect" ] || exit 0
 
 if ! command -v nordvpn >/dev/null 2>&1; then
     log "nordvpn CLI not found, skipping"
