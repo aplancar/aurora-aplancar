@@ -10,6 +10,10 @@
 
 set -uo pipefail
 
+# The nordvpn CLI dies with "cannot get user home dir" when $HOME is unset,
+# which it is for root system services that don't set User=.
+export HOME="${HOME:-/root}"
+
 SUBNET="100.64.0.0/10"
 PORT="41641"
 
@@ -19,13 +23,18 @@ log() {
 
 # nordvpnd's socket can take a few seconds to answer after the unit starts.
 SETTINGS=""
+ERR=""
 for _ in $(seq 1 30); do
-    SETTINGS="$(nordvpn settings 2>/dev/null)" && break
+    if OUT="$(nordvpn settings 2>&1)"; then
+        SETTINGS="$OUT"
+        break
+    fi
+    ERR="$OUT"
     sleep 1
 done
 
 if [ -z "$SETTINGS" ]; then
-    log "nordvpnd did not respond, skipping"
+    log "nordvpnd did not respond, skipping${ERR:+ (last error: $ERR)}"
     exit 0
 fi
 

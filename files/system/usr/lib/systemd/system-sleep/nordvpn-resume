@@ -13,6 +13,11 @@
 
 set -uo pipefail
 
+# The nordvpn CLI dies with "cannot get user home dir" when $HOME is unset,
+# which it is under systemd-sleep — without this every call below fails and
+# "pre" always concludes we weren't connected.
+export HOME="${HOME:-/root}"
+
 ACTION="${1:-}"
 STAGE="${2:-}"
 
