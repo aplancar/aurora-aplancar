@@ -5,11 +5,14 @@
 # down and rebuilt. systemd-logind runs every executable in this directory
 # automatically on sleep/resume — no unit needs to be enabled.
 #
-# The network interface and nordvpnd typically aren't ready the instant
-# resume fires, so checking `nordvpn status` immediately on "post" races
-# the interface coming back up and fails every time. Instead, record
-# whether we were connected on "pre" (while everything is still up), then
-# on "post" poll for network + daemon readiness before acting.
+# Record whether we were connected on "pre" (while everything is still up).
+# On "post", hand off to a background "reconnect" run: NetworkManager only
+# brings Wi-Fi back after logind's sleep job (and so this hook) finishes,
+# so waiting for the network inside the hook can never succeed — and a
+# connect attempt with no network picks a random server and leaves a dead
+# tunnel. The background run waits for the network, gives nordvpnd's own
+# post-resume reconnect a chance, and only bounces the tunnel if traffic
+# through it still fails.
 
 set -uo pipefail
 
@@ -68,41 +71,49 @@ if ! command -v nordvpn >/dev/null 2>&1; then
     exit 0
 fi
 
-# Wait for a default route before bothering the VPN daemon at all.
-for _ in $(seq 1 30); do
+# Wait for NetworkManager to bring the physical link back (main table only;
+# NordVPN's default route lives in table 205).
+for _ in $(seq 1 90); do
     ip route show default 2>/dev/null | grep -q . && break
     sleep 1
 done
+
+if ! ip route show default 2>/dev/null | grep -q .; then
+    log "no network after resume, skipping"
+    exit 0
+fi
 
 if ! systemctl is-active --quiet nordvpnd.service; then
     log "nordvpnd.service is not active, skipping"
     exit 0
 fi
 
-# nordvpnd's CLI/gRPC socket can take a few seconds to answer after resume;
-# retry instead of trusting a single immediate check.
-STATUS_OUTPUT=""
-for _ in $(seq 1 15); do
-    STATUS_OUTPUT="$(nordvpn status 2>/dev/null)" && break
+# nordvpnd reconnects on its own after resume; give it time, then check
+# whether traffic actually flows before tearing anything down.
+tunnel_works() {
+    grep -qi "^Status: Connected" <<<"$(nordvpn status 2>&1)" \
+        && ping -c1 -W3 1.1.1.1 >/dev/null 2>&1
+}
+
+for _ in $(seq 1 20); do
+    if tunnel_works; then
+        log "tunnel is working after resume, nothing to do"
+        exit 0
+    fi
     sleep 1
 done
 
-if [ -z "$STATUS_OUTPUT" ]; then
-    log "nordvpn status check failed after waiting, skipping"
-    exit 0
-fi
+log "tunnel not passing traffic, reconnecting NordVPN"
 
-log "reconnecting NordVPN after resume"
-
-if ! nordvpn disconnect >/dev/null 2>&1; then
-    log "disconnect command failed, aborting reconnect attempt"
+if ! OUT="$(nordvpn disconnect 2>&1)"; then
+    log "disconnect failed: $OUT"
     exit 0
 fi
 
 sleep 1
 
-if ! nordvpn connect >/dev/null 2>&1; then
-    log "reconnect command failed"
+if ! OUT="$(nordvpn connect 2>&1)"; then
+    log "reconnect failed: $OUT"
     exit 0
 fi
 
