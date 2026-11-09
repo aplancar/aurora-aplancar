@@ -15,4 +15,9 @@ modules:
         install:
           - org.deluge_torrent.deluge
 
+  - type: systemd
+    system:
+      enabled:
+        - sshd.service # SSH target for michaela, reached over Tailscale
+
   - type: signing # this sets up the proper policy & signing files for signed images to work fully

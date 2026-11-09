@@ -1,0 +1,44 @@
+#!/usr/bin/bash
+#
+# NordVPN's firewall drops traffic that doesn't go through its tunnel, which
+# breaks Tailscale (and so SSH between michaela and melisandre) whenever the
+# VPN is connected. Allowlist Tailscale's CGNAT range and its WireGuard port.
+#
+# The allowlist is nordvpnd runtime state under /var/lib/nordvpn, so it can't
+# be baked in at image build time — this runs at boot and adds the entries
+# only if they're missing (adding a duplicate is an error in the CLI).
+
+set -uo pipefail
+
+SUBNET="100.64.0.0/10"
+PORT="41641"
+
+log() {
+    echo "nordvpn-tailscale-allowlist: $*"
+}
+
+# nordvpnd's socket can take a few seconds to answer after the unit starts.
+SETTINGS=""
+for _ in $(seq 1 30); do
+    SETTINGS="$(nordvpn settings 2>/dev/null)" && break
+    sleep 1
+done
+
+if [ -z "$SETTINGS" ]; then
+    log "nordvpnd did not respond, skipping"
+    exit 0
+fi
+
+if grep -qF "$SUBNET" <<<"$SETTINGS"; then
+    log "subnet $SUBNET already allowlisted"
+else
+    nordvpn allowlist add subnet "$SUBNET" && log "allowlisted subnet $SUBNET"
+fi
+
+if grep -qE "(^|[^0-9])${PORT}([^0-9]|$)" <<<"$SETTINGS"; then
+    log "port $PORT already allowlisted"
+else
+    nordvpn allowlist add port "$PORT" protocol UDP && log "allowlisted port $PORT/udp"
+fi
+
+exit 0

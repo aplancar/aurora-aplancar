@@ -40,6 +40,7 @@ modules:
     system:
       enabled:
         - nordvpnd.service
+        - nordvpn-tailscale-allowlist.service # lets Tailscale (michaela -> melisandre SSH) work while NordVPN is connected
 
   - type: default-flatpaks
     configurations:

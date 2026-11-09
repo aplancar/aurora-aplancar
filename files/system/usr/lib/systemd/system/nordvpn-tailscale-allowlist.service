@@ -1,0 +1,12 @@
+[Unit]
+Description=Allowlist Tailscale traffic in NordVPN's firewall
+After=nordvpnd.service
+Wants=nordvpnd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nordvpn-tailscale-allowlist
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
