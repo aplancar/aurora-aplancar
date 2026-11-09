@@ -161,3 +161,35 @@ it locally to re-set that secret.
   gh secret set SIGNING_SECRET < cosign.key
   gh secret set SIGNING_SECRET --app dependabot < cosign.key
   ```
+
+## 10. App setup that can't be baked in
+
+### (melisandre) Jellyfin server
+
+The recipe ships the container (`jellyfin.container` quadlet), its state dirs,
+and auto-updates. It starts once `/var/mnt/Media` is mounted.
+
+1. **Media drive.** Add the drive to `/etc/fstab`. It's machine-specific, so it
+   isn't in the image. The current entry:
+   ```
+   UUID=1274-110B /var/mnt/Media exfat defaults,uid=1000,gid=1000,umask=022,nofail,x-systemd.device-timeout=10s 0 0
+   ```
+2. **Setup wizard.** Open `http://melisandre:8096` and create the admin user.
+3. **Libraries.** Use container paths: `/media/movies`, `/media/tvshows`,
+   `/media/othervideos`, `/media/uncategorized`.
+4. **Hardware transcoding.** Dashboard → Playback → VA-API or Intel QSV,
+   device `/dev/dri/renderD128`.
+
+If the drive was missing at boot, Jellyfin won't have started. Plug the drive
+in, then `sudo systemctl start jellyfin`.
+
+### (melisandre) Remote desktop (KRdp)
+
+The KRdp server is enabled by the recipe and starts with the Plasma session.
+You still need to set its credentials:
+
+- System Settings → Remote Desktop: add an RDP username and password, and turn
+  it on.
+- RDP shares the logged-in session, so someone must be logged in. There's no
+  automatic login, by choice.
+- Connect from michaela with KRDC (flatpak in the recipe) to `rdp://melisandre`.
