@@ -14,6 +14,7 @@ modules:
       - scope: system
         install:
           - com.valvesoftware.Steam
+          - org.jellyfin.JellyfinDesktop # client for the Jellyfin server on melisandre
 
   - type: kargs
     kargs:

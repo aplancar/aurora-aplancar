@@ -19,5 +19,11 @@ modules:
     system:
       enabled:
         - sshd.service # SSH target for michaela, reached over Tailscale
+        - podman-auto-update.timer # pulls new images for containers with AutoUpdate=registry (Jellyfin)
+
+  - type: files
+    files:
+      - source: melisandre
+        destination: / # melisandre-only files, e.g. the Jellyfin quadlet
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully

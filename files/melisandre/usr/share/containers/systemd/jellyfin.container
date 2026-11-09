@@ -1,0 +1,32 @@
+# Jellyfin media server, run as a rootful Podman quadlet. The generator turns
+# this into jellyfin.service at boot; [Install] below makes it start
+# automatically — no `systemctl enable` needed (or possible).
+[Unit]
+Description=Jellyfin media server
+# Media lives on a second drive; don't start until it's mounted.
+RequiresMountsFor=/var/mnt/Media
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/jellyfin/jellyfin:latest
+ContainerName=jellyfin
+AutoUpdate=registry
+# Host networking: clients' LAN/Tailscale autodiscovery (UDP 7359) works, and
+# traffic avoids the podman bridge, which NordVPN's forward chain would filter.
+# The web UI is on port 8096, already open in the FedoraWorkstation zone.
+Network=host
+Volume=/var/lib/jellyfin/config:/config
+Volume=/var/lib/jellyfin/cache:/cache
+Volume=/var/mnt/Media:/media:ro
+# Intel HD 530 for VA-API/QSV hardware transcoding.
+AddDevice=/dev/dri
+# Don't let podman relabel the media drive for SELinux; just skip confinement.
+SecurityLabelDisable=true
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target
