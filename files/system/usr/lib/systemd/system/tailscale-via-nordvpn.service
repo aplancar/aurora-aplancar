@@ -1,0 +1,11 @@
+[Unit]
+Description=Route tailscaled's own traffic through the NordVPN tunnel
+Before=tailscaled.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/tailscale-via-nordvpn
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

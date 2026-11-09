@@ -1,0 +1,23 @@
+#!/usr/bin/bash
+#
+# tailscaled marks its own sockets (control plane, DERP, WireGuard underlay)
+# with fwmark 0x80000, and its ip rule 5210 sends those packets via the main
+# table — out the physical interface, around the NordVPN tunnel. NordVPN's
+# firewall drops non-tunnel traffic, so tailscaled can't reach
+# controlplane.tailscale.com and `tailscale up` hangs.
+#
+# Route tailscaled's marked traffic into NordVPN's table (205) first, so it
+# goes through the tunnel instead. When NordVPN is disconnected, table 205 is
+# empty and lookup falls through to tailscale's own rules.
+
+set -uo pipefail
+
+PRIORITY="5200"
+
+if ip rule show priority "$PRIORITY" | grep -q .; then
+    echo "tailscale-via-nordvpn: rule $PRIORITY already present"
+    exit 0
+fi
+
+ip rule add priority "$PRIORITY" fwmark 0x80000/0xff0000 lookup 205 \
+    && echo "tailscale-via-nordvpn: added rule $PRIORITY"
