@@ -161,9 +161,3 @@ it locally to re-set that secret.
   gh secret set SIGNING_SECRET < cosign.key
   gh secret set SIGNING_SECRET --app dependabot < cosign.key
   ```
-
-## Not yet in the recipe
-
-`org.mozilla.thunderbird_esr` is installed on michaela but isn't in the recipe
-or Aurora's default flatpak set. It was installed before this repo existed.
-Either add it to `default-flatpaks` or uninstall it.
