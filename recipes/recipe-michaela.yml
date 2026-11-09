@@ -15,6 +15,7 @@ modules:
         install:
           - com.valvesoftware.Steam
           - org.jellyfin.JellyfinDesktop # client for the Jellyfin server on melisandre
+          - org.kde.krdc # RDP client for KRdp on melisandre
 
   - type: kargs
     kargs:

@@ -20,6 +20,9 @@ modules:
       enabled:
         - sshd.service # SSH target for michaela, reached over Tailscale
         - podman-auto-update.timer # pulls new images for containers with AutoUpdate=registry (Jellyfin)
+    user:
+      enabled:
+        - app-org.kde.krdpserver.service # KDE RDP server, starts with the Plasma session; RDP user/password set in System Settings → Remote Desktop
 
   - type: files
     files:
