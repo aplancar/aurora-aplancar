@@ -38,16 +38,33 @@ if [ -z "$SETTINGS" ]; then
     exit 0
 fi
 
+ADDED=0
+
 if grep -qF "$SUBNET" <<<"$SETTINGS"; then
     log "subnet $SUBNET already allowlisted"
 else
-    nordvpn allowlist add subnet "$SUBNET" && log "allowlisted subnet $SUBNET"
+    nordvpn allowlist add subnet "$SUBNET" && log "allowlisted subnet $SUBNET" && ADDED=1
 fi
 
 if grep -qE "(^|[^0-9])${PORT}([^0-9]|$)" <<<"$SETTINGS"; then
     log "port $PORT already allowlisted"
 else
-    nordvpn allowlist add port "$PORT" protocol UDP && log "allowlisted port $PORT/udp"
+    nordvpn allowlist add port "$PORT" protocol UDP && log "allowlisted port $PORT/udp" && ADDED=1
+fi
+
+# nordvpnd builds its nftables allowlist sets when it connects and doesn't
+# rebuild them when entries are added to an active connection, so a VPN that
+# auto-connected before this ran keeps dropping Tailscale traffic. Reconnect
+# once so the new entries take effect; on later boots they're already saved
+# and get picked up by autoconnect.
+if [ "$ADDED" = 1 ] && grep -qi "^Status: Connected" <<<"$(nordvpn status 2>&1)"; then
+    log "reconnecting so the new allowlist entries take effect"
+    nordvpn disconnect >/dev/null 2>&1
+    if OUT="$(nordvpn connect 2>&1)"; then
+        log "reconnected"
+    else
+        log "reconnect failed: $OUT"
+    fi
 fi
 
 exit 0
