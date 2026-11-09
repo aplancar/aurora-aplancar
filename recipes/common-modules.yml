@@ -50,4 +50,8 @@ modules:
         install: # system flatpaks we want all users to have and not remove
           - org.mozilla.firefox
           - com.nordpass.NordPass
+          - com.bitwarden.desktop
+          - com.discordapp.Discord
+          - com.brave.Browser
+          - org.libreoffice.LibreOffice
       - scope: user # Also add Flathub user repo, but no user packages
