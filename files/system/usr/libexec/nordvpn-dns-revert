@@ -1,0 +1,38 @@
+#!/usr/bin/bash
+# nordvpnd pushes its own DNS servers (103.86.96.100/103.86.99.100) plus a "~."
+# routing domain and DefaultRoute onto the nordlynx link on EVERY connect, even
+# with `nordvpn set dns off` — which hijacks all lookups away from the LAN
+# Pi-hole. nordvpnd recreates nordlynx on each connect, so this runs from a udev
+# rule on link add (90-nordvpn-dns-revert.rules), waits for nordvpnd to push its
+# DNS, then reverts the link to no per-link DNS and flushes resolved's cache.
+# Only acts when NordVPN's DNS setting is disabled, so a machine that wants
+# NordVPN DNS is left alone.
+set -u
+export HOME="${HOME:-/root}" # nordvpn CLI fails with "cannot get user home dir" without it
+
+IF=nordlynx
+
+if ! nordvpn settings | grep -qiE '^DNS:[[:space:]]*disabled'; then
+    echo "NordVPN DNS setting is not disabled; leaving $IF DNS alone"
+    exit 0
+fi
+
+has_link_dns() {
+    # `resolvectl dns nordlynx` prints "Link N (nordlynx): <servers>" — empty after the first colon means none.
+    local dns domain
+    dns=$(resolvectl dns "$IF" 2>/dev/null | cut -d: -f2- | tr -d '[:space:]')
+    domain=$(resolvectl domain "$IF" 2>/dev/null | cut -d: -f2- | tr -d '[:space:]')
+    [[ -n "$dns" || -n "$domain" ]]
+}
+
+# Watch for up to 30s; extend after each revert in case nordvpnd re-pushes or
+# reconnects (new nordlynx link) while we're still running.
+deadline=$((SECONDS + 30))
+while (( SECONDS < deadline )); do
+    if has_link_dns; then
+        echo "nordvpnd set DNS on $IF: $(resolvectl dns "$IF" 2>&1) — reverting"
+        resolvectl revert "$IF" && resolvectl flush-caches
+        deadline=$((SECONDS + 15))
+    fi
+    sleep 1
+done

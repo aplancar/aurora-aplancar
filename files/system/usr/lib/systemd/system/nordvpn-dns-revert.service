@@ -1,0 +1,9 @@
+[Unit]
+Description=Revert the DNS NordVPN pushes onto nordlynx so the LAN Pi-hole is used
+After=systemd-resolved.service nordvpnd.service
+
+# No [Install]: started by udev (90-nordvpn-dns-revert.rules) each time
+# nordvpnd creates the nordlynx link, i.e. on every connect.
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nordvpn-dns-revert

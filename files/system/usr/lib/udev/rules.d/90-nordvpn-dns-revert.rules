@@ -1,0 +1,3 @@
+# nordvpnd recreates the nordlynx link on every connect and pushes its own DNS
+# onto it (even with `nordvpn set dns off`); undo that so the Pi-hole is used.
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="nordlynx", TAG+="systemd", ENV{SYSTEMD_WANTS}+="nordvpn-dns-revert.service"
