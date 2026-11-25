@@ -1,0 +1,30 @@
+#!/usr/bin/bash
+#
+# Tailscale is off by default on these machines: at home the router's NordVPN
+# and the Pi-hole (via DHCP) already cover them. Turn it on when needed with
+# `tailscale up` (keeps the saved settings, e.g. exit node `pihole`); the next
+# boot turns it off again. tailscaled itself keeps running so `up` is instant.
+#
+# Also makes the desktop user the tailscale operator, so `tailscale up/down/set`
+# work without sudo (operator is tailscaled state, can't be set at build time).
+
+set -uo pipefail
+
+OPERATOR="aplancar"
+
+# tailscaled's socket can take a moment to answer after the unit starts.
+OUT=""
+for _ in $(seq 1 30); do
+    if OUT="$(tailscale down 2>&1)"; then
+        echo "tailscale-down-at-boot: tailscale is down"
+        if id "$OPERATOR" >/dev/null 2>&1; then
+            tailscale set --operator="$OPERATOR" \
+                && echo "tailscale-down-at-boot: operator set to $OPERATOR"
+        fi
+        exit 0
+    fi
+    sleep 1
+done
+
+echo "tailscale-down-at-boot: tailscaled did not respond: $OUT"
+exit 1

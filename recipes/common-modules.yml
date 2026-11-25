@@ -42,6 +42,7 @@ modules:
         - nordvpnd.service
         - nordvpn-tailscale-allowlist.service # lets Tailscale (michaela -> melisandre SSH) work while NordVPN is connected
         - tailscale-via-nordvpn.service # routes tailscaled's control/DERP traffic through the NordVPN tunnel instead of being dropped
+        - tailscale-down-at-boot.service # Tailscale off by default at boot (home is covered by router VPN + Pi-hole); `tailscale up` to use it
 
   - type: default-flatpaks
     configurations:
