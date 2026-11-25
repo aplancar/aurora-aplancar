@@ -18,7 +18,7 @@ modules:
   - type: systemd
     system:
       enabled:
-        - sshd.service # SSH target for michaela, reached over Tailscale
+        - sshd.service # SSH target for michaela: over the LAN at home (192.168.1.140, router reservation), over Tailscale otherwise
         - podman-auto-update.timer # pulls new images for containers with AutoUpdate=registry (Jellyfin)
     user:
       enabled:
